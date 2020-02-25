@@ -11,11 +11,20 @@
   [url]
   (html/html-resource (java.net.URL. url)))
 
-(defn get-countries-by-variable
-  "Returns a list of 'countries by variable' variables to append to a cru-url"
-  []
+(defn extract-url-list
+  "Returns a list of urls from a given site. Use cases:
+    (1) 'countries by variable' variables to append to a cru-url
+    (2) get filenames by a variable (list of countries per variable)"
+  [url]
   (map #(get-in % [:attrs :href])
-       (html/select (scrape-url cru-url) [:table :td :a])))
+       (html/select (scrape-url url) [:table :td :a])))
 
-(get-countries-by-variable)
-;; => '(cld dtr frs pet pre tmn tmp tmx vap wet)
+(defn var-to-files
+  "Map variables to their list of extracted filenames"
+  [var]
+  {(keyword var)
+   (extract-url-list (str cru-url var "/"))})
+
+(defn get-all-files
+  []
+  (map var-to-files (extract-url-list cru-url)))
