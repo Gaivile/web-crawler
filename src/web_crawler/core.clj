@@ -28,3 +28,41 @@
 (defn get-all-files
   []
   (map var-to-files (extract-url-list cru-url)))
+
+(defn to-csv
+  "Returns a sequence of vectors, each vector contains a string of a specific line"
+  [url]
+  (csv/read-csv
+   (slurp url)))
+
+(defn parse-strings
+  "Return a list of strings"
+  [data-csv]
+  (re-seq #"[a-zA-Z0-9\.]+" (first data-csv)))
+
+(mapv #(mapv #(Float/parseFloat  %) %) (drop 4 (map parse-strings (to-csv (format-url-for-var-country "cld" "Mexico")))))
+
+
+(defn format-url-for-var-country
+  [var country]
+  (str "https://crudata.uea.ac.uk/cru/data/hrg/cru_ts_4.01/crucy.1709191757.v4.01/countries/"
+       var "/crucy.v4.01.1901.2016."
+       country "."
+       var ".per"))
+
+
+(println (to-csv (format-url-for-var-country "cld" "Mexico")))
+
+#_(defn get-data-for-years
+  [var country start-year finish-year]
+  (let [url (format-url-for-var-country var country)]))
+
+
+
+;; “Show me the average value for [variable] for [country] between [start-year] and [finish-year]”
+;; https://crudata.uea.ac.uk/cru/data/hrg/cru_ts_4.01/crucy.1709191757.v4.01/countries/wet/crucy.v4.01.1901.2016.Kosovo.wet.per
+
+
+(parse-strings (nth (to-csv (format-url-for-var-country "cld" "Mexico")) 5))
+
+(def data-file (to-csv (format-url-for-var-country "cld" "Mexico")))
