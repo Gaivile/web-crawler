@@ -40,9 +40,6 @@
   [data-csv]
   (re-seq #"[a-zA-Z0-9\.]+" (first data-csv)))
 
-(mapv #(mapv #(Float/parseFloat  %) %) (drop 4 (map parse-strings (to-csv (format-url-for-var-country "cld" "Mexico")))))
-
-
 (defn format-url-for-var-country
   [var country]
   (str "https://crudata.uea.ac.uk/cru/data/hrg/cru_ts_4.01/crucy.1709191757.v4.01/countries/"
@@ -50,19 +47,30 @@
        country "."
        var ".per"))
 
+(defn parse-floats
+  [strings]
+  (mapv #(Float/parseFloat %) strings))
 
-(println (to-csv (format-url-for-var-country "cld" "Mexico")))
+(defn get-annual-data
+  [data-per-row start-year finish-year]
+  (let [range-to-keys (map #(keyword (str %)) (range start-year (+ 1 finish-year)))
+        mapped-data (into {} (map #(into {} {(keyword (str (int (first %)))) (rest %)}) data-per-row))]
+    (select-keys mapped-data range-to-keys)))
 
-#_(defn get-data-for-years
+(defn get-data-for-years
+  "Return data for specified variable, specified country within a specified year range (between 1901 and 2016)"
   [var country start-year finish-year]
-  (let [url (format-url-for-var-country var country)]))
+  (when (and (and (> start-year 1900) (< start-year 2017) (< start-year finish-year))
+             (and (< finish-year 2017) (> finish-year 1900) (> finish-year start-year)))
+    (let [data-per-row (->> (format-url-for-var-country var country)
+                            (to-csv)
+                            (mapv parse-strings)
+                            (drop 4)
+                            (mapv parse-floats))]
+      (get-annual-data data-per-row start-year finish-year))))
 
-
+(get-data-for-years "wet" "Kosovo" 1990 2000)
 
 ;; “Show me the average value for [variable] for [country] between [start-year] and [finish-year]”
-;; https://crudata.uea.ac.uk/cru/data/hrg/cru_ts_4.01/crucy.1709191757.v4.01/countries/wet/crucy.v4.01.1901.2016.Kosovo.wet.per
-
-
-(parse-strings (nth (to-csv (format-url-for-var-country "cld" "Mexico")) 5))
-
-(def data-file (to-csv (format-url-for-var-country "cld" "Mexico")))
+;; url: https://crudata.uea.ac.uk/cru/data/hrg/cru_ts_4.01/crucy.1709191757.v4.01/countries/wet/crucy.v4.01.1901.2016.Kosovo.wet.per
+;; years: 1901 - 2016
